@@ -33,12 +33,12 @@ Hapbeat Wireless Sender Firmwareは、M5Stackシリーズをベースにした�
 
 | ライブラリ名                  | バージョン   | ライセンス       | ライセンスファイル名                     |
 |---------------------------|-----------|---------------|-------------------------------------|
-| M5Unified                | 0.1.14    | MITライセンス  | [M5Unified_0.1.14_LICENSE.md](./M5Unified_0.1.14_LICENSE.md) |
-| Adafruit TCS34725         | 1.4.4     | BSDライセンス  | [Adafruit_TCS34725_1.4.4_LICENSE.md](./Adafruit_TCS34725_1.4.4_LICENSE.md) |
-| MQTT (256dpi)             | 2.5.2     | MITライセンス  | [MQTT_2.5.2_LICENSE.md](./MQTT_2.5.2_LICENSE.md) |
-| PubSubClient              | 2.8       | MITライセンス  | [PubSubClient_2.8_LICENSE.md](./PubSubClient_2.8_LICENSE.md) |
-| ArduinoJson               | 7.1.0     | MITライセンス  | [ArduinoJson_7.1.0_LICENSE.md](./ArduinoJson_7.1.0_LICENSE.md) |
-| FastLED                   | 3.7.0     | MITライセンス  | [FastLED_3.7.0_LICENSE.md](./FastLED_3.7.0_LICENSE.md) |
+| M5Unified                | 0.1.14    | MITライセンス  | [M5Unified_0.1.14_LICENSE.md](./licenses/M5Unified_0.1.14_LICENSE.md) |
+| Adafruit TCS34725         | 1.4.4     | BSDライセンス  | [Adafruit_TCS34725_1.4.4_LICENSE.md](./licenses/Adafruit_TCS34725_1.4.4_LICENSE.md) |
+| MQTT (256dpi)             | 2.5.2     | MITライセンス  | [MQTT_2.5.2_LICENSE.md](./licenses/MQTT_2.5.2_LICENSE.md) |
+| PubSubClient              | 2.8       | MITライセンス  | [PubSubClient_2.8_LICENSE.md](./licenses/PubSubClient_2.8_LICENSE.md) |
+| ArduinoJson               | 7.1.0     | MITライセンス  | [ArduinoJson_7.1.0_LICENSE.md](./licenses/ArduinoJson_7.1.0_LICENSE.md) |
+| FastLED                   | 3.7.0     | MITライセンス  | [FastLED_3.7.0_LICENSE.md](./licenses/FastLED_3.7.0_LICENSE.md) |
 
 ---
 
@@ -46,6 +46,3 @@ Hapbeat Wireless Sender Firmwareは、M5Stackシリーズをベースにした�
 
 - 各ライブラリのライセンス条件に従い、本プロジェクトを利用してください。
 - このフォルダ内のライセンスファイルは、それぞれのライブラリの公式リポジトリから取得したものです。
-
-
-   
