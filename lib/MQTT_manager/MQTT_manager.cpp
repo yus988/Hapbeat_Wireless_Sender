@@ -2,6 +2,10 @@
 
 namespace MQTT_manager {
 
+IPAddress local_IP(10, 66, 11, 10);
+IPAddress gateway(10, 66, 15, 254);
+IPAddress subnet(255, 255, 248, 0);
+
 bool mqttConnected = false;
 WiFiClientSecure espClient;  // Secure用のクライアント
 WiFiClient* espClientPtr;    // ポインタとしてのクライアント
@@ -80,6 +84,11 @@ void connect() {
 
 void initMQTTclient(void (*statusCb)(const char*)) {
   statusCallback = statusCb;
+
+  // 固定IPアドレスを設定
+  if (!WiFi.config(local_IP, gateway, subnet)) {
+      Serial.printf("Failed to configure static IP");
+  }
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {

@@ -61,8 +61,7 @@ void TaskColorSensor(void* args) {
   while (1) {
     ColorSensor::getColorValues(r, g, b);
     String color = determineColor(r, g, b);
-    // Serial.printf("R: %d G: %d B: %d, color is: %s\n", r, g, b,
-    // color.c_str());
+    Serial.printf("R: %d G: %d B: %d, color is: %s\n", r, g, b, color.c_str());
 
     unsigned long currentTime = millis();
     bool shouldSendMessage = false;
