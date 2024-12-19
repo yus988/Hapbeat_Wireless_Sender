@@ -22,15 +22,22 @@ const uint8_t data_BtnA[] = {0, 0, 99, 0, 0, 100, 100, 0};
 const uint8_t data_BtnB[] = {0, 0, 99, 5, 0, 50, 50, 1};
 const uint8_t data_BtnC[] = {0, 0, 99, 5, 0, 50, 50, 2};
 
+///////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////
+
 void displayData(const uint8_t* data) {
-  // 上部データ表示エリアをクリア（ボタンエリアを残す）
-  int dataDisplayHeight = M5.Display.height() - 30;  // ボタン表示エリアを除外
-  M5.Display.fillRect(0, 0, M5.Display.width(), dataDisplayHeight, TFT_BLACK);
+  // 静的に前回のデータを保持
+  static uint8_t previousData[ELEMENTS_NUM] = {0};
+  static int previousSendTimes = -1;      // 前回の送信回数
+  static String previousDataString = "";  // 前回の Data 表示内容
+  static bool firstRun = true;            // 初回実行かどうかのフラグ
 
-  // データ表示設定
-  M5.Display.setCursor(0, 10);  // 常に上部に表示
-  M5.Display.setTextSize(2);
+  // 表示位置設定
+  int startY = 10;       // 最初の行の Y 座標
+  int lineHeight = 20;   // 各行の高さ
+  int labelWidth = 130;  // 項目名（ラベル）の幅
 
+  // プレイタイプ文字列
   String playtype_str = (data[7] == 0)   ? "oneshot"
                         : (data[7] == 1) ? "loop_start"
                         : (data[7] == 2) ? "loop_stop"
@@ -40,43 +47,78 @@ void displayData(const uint8_t* data) {
   const char* labels[] = {"channel", "wearer",   "position", "sound_id",
                           "sub_id",  "volume_L", "volume_R", "playtype"};
 
-  // 行間スペース設定
-  int lineSpacing = 2;
-
-  // 送信回数の表示
-  M5.Display.setTextColor(TFT_WHITE);
-  M5.Display.printf("Send Times: ");
-  M5.Display.setTextColor(TFT_YELLOW);
-  M5.Display.printf("%d\n", sendTimes);
-  M5.Display.setCursor(0, M5.Display.getCursorY() + lineSpacing);
-
-  // Data 配列の表示
-  M5.Display.setTextColor(TFT_YELLOW);
-  M5.Display.print("{");
+  // データ全体を文字列化
+  String currentDataString = "{";
   for (int i = 0; i < ELEMENTS_NUM; ++i) {
-    M5.Display.printf("%d", data[i]);
+    currentDataString += String(data[i]);
     if (i < ELEMENTS_NUM - 1) {
-      M5.Display.print(",");
+      currentDataString += ",";
     }
   }
-  M5.Display.println("}");
-  M5.Display.setCursor(0, M5.Display.getCursorY() + lineSpacing);
+  currentDataString += "}";
 
-  // 各データ項目の表示
-  for (int i = 0; i < ELEMENTS_NUM; ++i) {
+  // テキストサイズ設定
+  M5.Display.setTextSize(2);
+
+  // 送信回数の表示（変更がある場合のみ更新）
+  if (sendTimes != previousSendTimes || firstRun) {
+    M5.Display.fillRect(0, startY, M5.Display.width(), lineHeight,
+                        TFT_BLACK);  // クリア
+    M5.Display.setCursor(0, startY);
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.printf("%-9s= ", labels[i]);  // ラベルを左揃えで表示
+    M5.Display.printf("Send Times: ");
     M5.Display.setTextColor(TFT_YELLOW);
-    if (i == 7) {
-      M5.Display.printf("%d (%s)\n", data[i], playtype_str.c_str());
-    } else {
-      M5.Display.printf("%d\n", data[i]);
-    }
-    M5.Display.setCursor(0, M5.Display.getCursorY() + lineSpacing);
+    M5.Display.printf("%d\n", sendTimes);
+    previousSendTimes = sendTimes;
   }
 
-  M5.update();
+  // Data の表示（変更がある場合のみ更新）
+  if (currentDataString != previousDataString || firstRun) {
+    int dataY = startY + lineHeight;
+    M5.Display.fillRect(0, dataY, M5.Display.width(), lineHeight,
+                        TFT_BLACK);  // クリア
+    M5.Display.setCursor(0, dataY);
+    M5.Display.setTextColor(TFT_YELLOW);
+    M5.Display.println(currentDataString);
+    previousDataString = currentDataString;
+  }
+
+  // 各データ項目の描画
+  for (int i = 0; i < ELEMENTS_NUM; ++i) {
+    int yPos = startY + (i + 2) * lineHeight;  // 各項目の Y 座標
+
+    // ラベルを常に描画
+    M5.Display.setTextColor(TFT_WHITE);
+    M5.Display.setCursor(0, yPos);
+    M5.Display.printf("%-9s= ", labels[i]);  // ラベルを左揃えで表示
+
+    // データ部分のみ変更があれば再描画
+    if (data[i] != previousData[i] || firstRun) {
+      // データのクリア領域を調整して `=` の右側をクリア
+      M5.Display.fillRect(labelWidth, yPos, M5.Display.width() - labelWidth,
+                          lineHeight, TFT_BLACK);
+      M5.Display.setTextColor(TFT_YELLOW);
+      M5.Display.setCursor(labelWidth, yPos);
+
+      if (i == 7) {
+        // playtype の特別表示
+        M5.Display.printf("%d (%s)", data[i], playtype_str.c_str());
+      } else {
+        M5.Display.printf("%d", data[i]);
+      }
+    }
+  }
+
+  // 前回のデータを更新
+  for (int i = 0; i < ELEMENTS_NUM; ++i) {
+    previousData[i] = data[i];
+  }
+
+  firstRun = false;  // 初回実行フラグを無効化
 }
+
+/////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
 
 // 送信コールバック
 void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
@@ -131,6 +173,7 @@ void initEspNow() {
     Serial.println("Pair failed");
   }
   esp_now_register_send_cb(OnDataSent);
+  displayData(data_empty);
 }
 
 /*
