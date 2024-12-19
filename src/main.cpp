@@ -1,14 +1,6 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
 
-#ifdef ENABLE_COLOR_SENSOR
-  #include <ColorSensor.h>
-  #include <FastLED.h>
-#endif
-
-#ifndef NO_DISPLAY
-  #include <M5UImanager.h>
-#endif
+TaskHandle_t thp[2];
 
 #ifdef ESPNOW
   #include <espnow_manager.h>
@@ -20,27 +12,20 @@
 #include "config.h"
 #include "pinAssign.h"
 
+#ifndef NO_DISPLAY
+  #include <M5UImanager.h>
+
 const char* cmd_stat;
 const char* cmd_btn;
 const char* cmd_conn;
+#endif
 
+#ifdef ENABLE_COLOR_SENSOR
+  #include <ColorSensor.h>
+  #include <FastLED.h>
+  #include <ArduinoJson.h>
 String lastColor = "None";
-
 CRGB _leds[1];
-
-// mqtt 受信で状態を変えないのであれば不要
-void mqttStatusCallback(const char* status) {
-  // Serial.println(status);
-  // if (strcmp(status, "Successfully connected to Hapbeat") == 0) {
-  //   _leds[0] = CREATE_CRGB(COLOR_CONNECTED);
-  //   Serial.println("turn LED to GREEN");
-  // } else if (strstr(status, "failed") != NULL) {
-  //   _leds[0] = CREATE_CRGB(COLOR_UNCONNECTED);
-  // }
-  // FastLED.show();
-}
-
-TaskHandle_t thp[2];
 
 // 色の反映
 String determineColor(uint8_t r, uint8_t g, uint8_t b) {
@@ -133,7 +118,7 @@ void TaskColorSensor(void* args) {
       MQTT_manager::sendMessageToHapbeat(message);
     }
 
-#if defined(INTERNET)
+  #if defined(INTERNET)
     count++;
     if (count >= interval) {
       // 任意の変数回ごとに実行する処理
@@ -147,7 +132,7 @@ void TaskColorSensor(void* args) {
 
       count = 0;  // カウントをリセット
     }
-#endif
+  #endif
 
     lastColor = color;
     delay(COLOR_SENSOR_INTERVAL);
@@ -166,6 +151,22 @@ void TaskMQTT(void* args) {
     delay(100);
   }
 }
+
+#endif
+
+// mqtt 受信で状態を変えないのであれば不要
+void mqttStatusCallback(const char* status) {
+  // Serial.println(status);
+  // if (strcmp(status, "Successfully connected to Hapbeat") == 0) {
+  //   _leds[0] = CREATE_CRGB(COLOR_CONNECTED);
+  //   Serial.println("turn LED to GREEN");
+  // } else if (strstr(status, "failed") != NULL) {
+  //   _leds[0] = CREATE_CRGB(COLOR_UNCONNECTED);
+  // }
+  // FastLED.show();
+}
+
+//////////////////// task //////////////////////
 
 void setup(void) {
   Serial.begin(115200);
@@ -192,7 +193,7 @@ void setup(void) {
 #endif
 
 #ifdef ESPNOW
-  initEspNow();
+  espnowManager::initEspNow();
 #elif MQTT
   MQTT_manager::initMQTTclient(mqttStatusCallback);
   xTaskCreatePinnedToCore(TaskMQTT, "TaskMQTT", 8192, NULL, 23, &thp[0], 1);
@@ -201,13 +202,13 @@ void setup(void) {
 
 void loop(void) {
 #ifdef ESPNOW
-  sendSerialViaESPNOW();
+  espnowManager::sendSerialViaESPNOW();
 #endif
 #if defined(ENABLE_DISPLAY)
   cmd_stat = "empty";
   cmd_btn = M5ButtonNotify(cmd_stat);
   if (cmd_btn != "empty") {
-    SendEspNOW(cmd_btn);
+    espnowManager::SendEspNOW(cmd_btn);
     Serial.println(cmd_btn);
   }
 #endif
