@@ -1,77 +1,79 @@
 #include <M5Unified.h>
 
-int screen_width;
-int screen_height;
-int button_width;
-int button_height;
-int buttonA_x;
-int buttonA_y;
-int buttonB_x;
-int buttonB_y;
-int buttonC_x;
-int buttonC_y;
+int screen_width, screen_height, button_width, button_height;
+int buttonA_x, buttonA_y, buttonB_x, buttonB_y, buttonC_x, buttonC_y;
 
-#define data_A {0, 0, 0, 0, 0, 150, 150, 0}
-#define data_B {0, 0, 1, 0, 0, 150, 150, 0}
-#define data_C {0, 0, 2, 0, 0, 200, 200, 0}
+bool buttonA_pressed = false, buttonB_pressed = false, buttonC_pressed = false;
 
-bool buttonA_pressed = false;
-bool buttonB_pressed = false;
-bool buttonC_pressed = false;
+// 現時点では M5Stack basic 用
+void drawButtonState(int buttonIndex, int state, int color) {
+  // M5Stack Basic ボタンの幅・高さ
+  constexpr int buttonWidth = 50;    // ボタンの横幅
+  constexpr int buttonHeight = 30;   // バーの高さ
+  constexpr int screenWidth = 320;   // M5Stack Basic の画面幅
+  constexpr int screenHeight = 240;  // M5Stack Basic の画面高さ
+  constexpr int buttonSpacing = 68;  // ボタン間の間隔
 
-#ifdef M5STACK_GRAY
+  // ボタンBを画面中央に配置
+  int centerX = screenWidth / 2;
+  int yPos = screenHeight - buttonHeight;  // バーを画面下部に配置
 
+  // 各ボタンの X 座標を計算
+  int xPos;
+  if (buttonIndex == 0) {
+    // ボタンA (左側)
+    xPos = centerX - buttonWidth - buttonSpacing;
+  } else if (buttonIndex == 1) {
+    // ボタンB (中央)
+    xPos = centerX - buttonWidth / 2;
+  } else if (buttonIndex == 2) {
+    // ボタンC (右側)
+    xPos = centerX + buttonSpacing;
+  } else {
+    return;  // 無効なボタンインデックス
+  }
+
+  // 描画
+  M5.Display.fillRect(xPos, yPos, buttonWidth, buttonHeight, color);
+}
+
+#ifdef M5STACK_BASIC
 const char *M5ButtonNotify(const char *stat) {
   M5.update();
-  static constexpr const int colors[] = {TFT_WHITE,  TFT_CYAN, TFT_RED,
-                                         TFT_YELLOW, TFT_BLUE, TFT_GREEN};
-  static constexpr const char *const names[] = {
-      "none",       "wasHold",     "wasClicked",
-      "wasPressed", "wasReleased", "wasDeciedCount"};
 
-  int w = M5.Display.width() / 5;
-  int h = M5.Display.height();
-  M5.Display.startWrite();
+  // ボタン配列とラベル
+  auto buttons = {&M5.BtnA, &M5.BtnB, &M5.BtnC};
+  const char *labels[] = {"BtnA", "BtnB", "BtnC"};
 
-  int state = M5.BtnA.wasHold()               ? 1
-              : M5.BtnA.wasClicked()          ? 2
-              : M5.BtnA.wasPressed()          ? 3
-              : M5.BtnA.wasReleased()         ? 4
-              : M5.BtnA.wasDecideClickCount() ? 5
-                                              : 0;
-  if (state) {
-    if (state == 3) {
-      stat = "BtnA";
+  // 各ボタンの前回の状態を保持する配列
+  static bool previousStates[3] = {false, false, false};
+
+  int index = 0;  // ボタンのインデックス
+
+  for (auto button : buttons) {
+    // ボタンの現在の状態を確認
+    bool isPressed = button->isPressed();
+
+    // 状態が変化した場合のみ画面を更新
+    if (isPressed != previousStates[index]) {
+      // 色の設定: 押下中は黄色、それ以外は緑
+      int color = isPressed ? TFT_YELLOW : TFT_GREEN;
+
+      // 状態に応じて stat を設定
+      if (isPressed) {
+        stat = labels[index];
+      }
+
+      // ボタン状態の描画
+      drawButtonState(index, isPressed ? 3 : 0, color);
+
+      // 前回の状態を更新
+      previousStates[index] = isPressed;
     }
-    M5.Display.fillRect(w * 1, 0, w - 1, h, colors[state]);
+
+    index++;
   }
 
-  state = M5.BtnB.wasHold()               ? 1
-          : M5.BtnB.wasClicked()          ? 2
-          : M5.BtnB.wasPressed()          ? 3
-          : M5.BtnB.wasReleased()         ? 4
-          : M5.BtnB.wasDecideClickCount() ? 5
-                                          : 0;
-  if (state) {
-    if (state == 3) {
-      stat = "BtnB";
-    }
-    M5.Display.fillRect(w * 2, 0, w - 1, h, colors[state]);
-  }
-
-  state = M5.BtnC.wasHold()               ? 1
-          : M5.BtnC.wasClicked()          ? 2
-          : M5.BtnC.wasPressed()          ? 3
-          : M5.BtnC.wasReleased()         ? 4
-          : M5.BtnC.wasDecideClickCount() ? 5
-                                          : 0;
-  if (state) {
-    if (state == 3) {
-      stat = "BtnC";
-    }
-    M5.Display.fillRect(w * 3, 0, w - 1, h, colors[state]);
-  }
-  M5.Display.endWrite();
   return stat;
 }
 
@@ -185,6 +187,12 @@ void initM5UImanager(void) {
   cfg.external_spk = false;  // 内蔵スピーカーを無効にする例（必要に応じて設定）
   M5.begin(cfg);
   M5.Display.setTextSize(4);
+
+#ifdef M5STACK_BASIC
+  drawButtonState(0, 0, TFT_GREEN);  // ボタン A
+  drawButtonState(1, 0, TFT_GREEN);  // ボタン B
+  drawButtonState(2, 0, TFT_GREEN);  // ボタン C
+#endif
 
 #ifdef M5STACK_CORE_S3
   M5.Display.setTextSize(1);

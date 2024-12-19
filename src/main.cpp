@@ -207,7 +207,7 @@ void loop(void) {
   cmd_stat = "empty";
   cmd_btn = M5ButtonNotify(cmd_stat);
   if (cmd_btn != "empty") {
-    espnowManager::SendEspNOW(cmd_btn);
+    espnowManager::SentEspnowTest(cmd_btn);
     Serial.println(cmd_btn);
   }
 #endif

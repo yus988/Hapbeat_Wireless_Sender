@@ -2,9 +2,9 @@
 #define ESPNOW_MANAGER_H
 
 namespace espnowManager {
-  void initEspNow(void);
-  void sendSerialViaESPNOW(void);
-  void SendEspNOW(const char* cmd);
-}
+void initEspNow(void);
+void sendSerialViaESPNOW(void);
+void SentEspnowTest(const char* cmd);
+}  // namespace espnowManager
 
 #endif
