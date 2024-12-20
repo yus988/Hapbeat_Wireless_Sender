@@ -44,7 +44,7 @@ void displayData(const uint8_t* data) {
                                          : "bg_loop";
 
   // ラベルとデータの配列
-  const char* labels[] = {"channel", "wearer",   "position", "sound_id",
+  const char* labels[] = {"category", "channel", "position", "sound_id",
                           "sub_id",  "volume_L", "volume_R", "playtype"};
 
   // データ全体を文字列化
