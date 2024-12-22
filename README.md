@@ -1,22 +1,26 @@
 # Hapbeat Wireless Sender Firmware
 
 Hapbeat Wireless Sender Firmwareは、M5Stackシリーズをベースにしたデバイス間通信やセンサーデータ送信をサポートするファームウェアです。本プロジェクトは、ESP32ベースのデバイスを使用し、ESP-NOWやMQTTプロトコルを利用してデータ通信を行います。
-
-## 特徴
-
 - **複数デバイス対応**: M5Stack CoreS3、Atom、Stampシリーズなど、複数のM5Stackデバイスに対応。
 - **通信プロトコル**: ESP-NOW、MQTTをサポート。
 - **センサー対応**: TCS34725カラーセンサーのサポート。
 - **カスタマイズ可能**: ビルドフラグを利用して柔軟な機能設定が可能。
 
+
 ## 必要な環境
 
-- **ハードウェア**: M5Stackシリーズ（例: M5Stack CoreS3、M5Atom）
+- **対応ハードウェア**:
+  - M5Stack basic（ボタン付きのM5Stack）
+  - M5Stack CoreS3
+  - ATOM Lite
+  - M5Stamp S3
+  - m5stick-c
+
 - **ソフトウェア**: 
   - [PlatformIO](https://platformio.org/) IDE
   - Python 3.x（PlatformIOの依存関係）
 
-## セットアップ手順
+## Quick Start
 
 1. **PlatformIOのインストール**  
    [公式サイト](https://platformio.org/)を参照してPlatformIOをインストールしてください。
@@ -26,8 +30,30 @@ Hapbeat Wireless Sender Firmwareは、M5Stackシリーズをベースにした�
    ```bash
    git clone https://github.com/yus988/Wireless_Sender.git
    cd Wireless_Sender
+   ```
+3. **書き込み環境（env）を設定**  
+   使用するハードウェアや通信プロトコルに応じた環境を選択
+   ![alt text](images/desc_env.png)
 
-# 使用ライブラリとライセンス情報
+4. 
+
+
+## 設定項目
+
+
+## 書き込み時の env 説明
+- env:m5stack-basic_espnow
+- env:MQTTColor-atom-internet
+- env:MQTTColor-atom-local
+- env:MQTTColor-M5Capsule
+- env:M5StackCoreS3
+- env:M5StampS3
+
+
+
+
+
+### 使用ライブラリとライセンス情報
 
 このプロジェクトで使用している外部ライブラリと、そのライセンス情報は以下の通りです。各ライブラリの詳細なライセンス内容は、`licenses/` フォルダ内のファイルを参照してください。
 
@@ -42,7 +68,7 @@ Hapbeat Wireless Sender Firmwareは、M5Stackシリーズをベースにした�
 
 ---
 
-## 注意事項
+### 注意事項
 
 - 各ライブラリのライセンス条件に従い、本プロジェクトを利用してください。
 - このフォルダ内のライセンスファイルは、それぞれのライブラリの公式リポジトリから取得したものです。

@@ -172,6 +172,7 @@ void setup(void) {
 
 #if defined(ENABLE_DISPLAY)
   initM5UImanager();
+  espnowManager::setBtnData(data_BtnA, data_BtnB, data_BtnC, 8);
 #endif
 
 #ifdef ENABLE_COLOR_SENSOR

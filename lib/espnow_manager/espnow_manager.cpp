@@ -10,7 +10,6 @@ namespace espnowManager {
 esp_now_peer_info_t slave;
 // data = [category, wearer_id, device_pos, data_id, sub_id, L_Vol, R_Vol,
 // isLoop ] isLoop, 0=oneshot, 1=loopStart, 2=stop
-
 #define ELEMENTS_NUM 8 /**< カンマ区切りデータの項目数 */
 #define DATA_SIZE sizeof(uint8_t[ELEMENTS_NUM])
 int sendTimes = 0;
@@ -18,9 +17,19 @@ unsigned int beginIndex;  // 要素の開始位置
 static String elements[ELEMENTS_NUM];
 
 const uint8_t data_empty[] = {0, 0, 0, 0, 0, 000, 000, 0};
-const uint8_t data_BtnA[] = {0, 0, 99, 0, 0, 100, 100, 0};
-const uint8_t data_BtnB[] = {0, 0, 99, 5, 0, 50, 50, 1};
-const uint8_t data_BtnC[] = {0, 0, 99, 5, 0, 50, 50, 2};
+uint8_t data_BtnA[ELEMENTS_NUM] = {0};
+uint8_t data_BtnB[ELEMENTS_NUM] = {0};
+uint8_t data_BtnC[ELEMENTS_NUM] = {0};
+
+// 全てのデータを一括で設定する関数
+void setBtnData(const uint8_t* dataA, const uint8_t* dataB,
+                const uint8_t* dataC, size_t size) {
+  if (size == ELEMENTS_NUM) {
+    memcpy(data_BtnA, dataA, size);
+    memcpy(data_BtnB, dataB, size);
+    memcpy(data_BtnC, dataC, size);
+  }
+}
 
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////
@@ -44,8 +53,8 @@ void displayData(const uint8_t* data) {
                                          : "bg_loop";
 
   // ラベルとデータの配列
-  const char* labels[] = {"category", "channel", "position", "sound_id",
-                          "sub_id",  "volume_L", "volume_R", "playtype"};
+  const char* labels[] = {"category", "channel",  "position", "sound_id",
+                          "sub_id",   "volume_L", "volume_R", "playtype"};
 
   // データ全体を文字列化
   String currentDataString = "{";
