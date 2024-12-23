@@ -2,9 +2,9 @@
 
 Hapbeat Wireless Sender Firmware は、M5Stack シリーズを無線送信機として利用し、Hapbeat Wireless と通信するためのファームウェアです。
 
-## Quick Start（M5Stack basic & esp-now の場合）
+## Quick Start（M5Stack basic & ESP-NOW の場合）
 
-※ 事前に git, VSCode をインストールし、VSCode の拡張機能から platform io をインストールしてください。
+※ 事前に [git](https://git-scm.com/downloads), [VSCode](https://azure.microsoft.com/ja-jp/products/visual-studio-code) をインストールし、VSCode の拡張機能から [PlatformIO](https://platformio.org/install/ide?install=vscode) をインストールしてください。
 
 1. リポジトリのクローン or zip ファイルダウンロード
 2. 各 M5Stack に合わせた USB ドライバのインストール [USB Driver & Open source Library](https://docs.m5stack.com/en/download)
