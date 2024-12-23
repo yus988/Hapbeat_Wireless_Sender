@@ -9,9 +9,9 @@ Hapbeat Wireless Sender Firmware は、M5Stack シリーズを無線送信機と
 1. リポジトリのクローン or zip ファイルダウンロード
 2. 各 M5Stack に合わせた USB ドライバのインストール [USB Driver & Open source Library](https://docs.m5stack.com/en/download)
 3. M5Stack を PC に接続し、認識されているか確認（デバイスマネージャーで不明なデバイスと表示されなければ OK）  
-   ![alt text](images/device_manager.png)
+   ![alt text](assets/device_manager.png)
 4. VSCode の下部（画像赤枠）env:M5Stack_basic-ESPNOW を選択しビルド&書き込み
-   ![alt text](images/desc_env.png)
+   ![alt text](assets/desc_env.png)
 5. Hapbeat Wireless の電源を ON にし、カテゴリを 0 に合わせ、ボタン押下で動作するか確認
 
 ## 必要な環境
