@@ -195,7 +195,8 @@ void setup(void) {
 
 #ifdef ESPNOW
   espnowManager::initEspNow();
-  // xTaskCreatePinnedToCore(espnowManager::loopEspNowTask, "loopEspNowTask", 4096,
+  // xTaskCreatePinnedToCore(espnowManager::loopEspNowTask, "loopEspNowTask",
+  // 4096,
   //                         NULL, 1, NULL, 1);
 
 #elif MQTT

@@ -7,6 +7,7 @@
 
 namespace espnowManager {
 
+// テスト用
 #define TEST_COUNT 100             // テスト回数
 unsigned long totalDelayTime = 0;  // 合計遅延時間
 unsigned int testCounter = 0;      // 現在の送信回数
@@ -136,30 +137,61 @@ void displayData(const uint8_t* data) {
 
 // 送信コールバック
 void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
-  char macStr[18];
-  snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0],
-           mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  Serial.printf("Last Packet Sent to: %s\n", macStr);
-  Serial.printf("Last Packet Send Status: %s\n", status == ESP_NOW_SEND_SUCCESS
-                                                     ? "Delivery Success"
-                                                     : "Delivery Fail");
+  // Serial.printf("SendTime");
+  // char macStr[18];
+  // snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+  // mac_addr[0],
+  //          mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+  // Serial.printf("Last Packet Sent to: %s\n", macStr);
+  // Serial.printf("Last Packet Send Status: %s\n", status ==
+  // ESP_NOW_SEND_SUCCESS
+  //                                                    ? "Delivery Success"
+  //                                                    : "Delivery Fail");
+}
+
+// テスト用
+void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
+  // Serial.printf("★pingpongrecieved\n ");
+
+  unsigned long recvTime = micros();  // ★ 受信時刻
+  unsigned long sentTime;
+
+  // ★ 送信側のタイムスタンプを取得
+  memcpy(&sentTime, incomingData, sizeof(unsigned long));
+
+  // ★ 往復遅延（RTT）と片道遅延の計算
+  unsigned long roundTripTime = recvTime - sentTime;
+  unsigned long oneWayDelay = roundTripTime / 2;
+
+  // ★ シリアル出力で遅延を表示
+  Serial.printf("★ Ping-Pong片道遅延: %lu us\n", oneWayDelay);
 }
 
 void SentEspnowTest(const char* cmd) {
-  const uint8_t* data;
+  // const uint8_t* data;
 
-  if (strcmp(cmd, "BtnA") == 0) {
-    data = data_BtnA;
-  } else if (strcmp(cmd, "BtnB") == 0) {
-    data = data_BtnB;
-  } else if (strcmp(cmd, "BtnC") == 0) {
-    data = data_BtnC;
+  // if (strcmp(cmd, "BtnA") == 0) {
+  //   data = data_BtnA;
+  // } else if (strcmp(cmd, "BtnB") == 0) {
+  //   data = data_BtnB;
+  // } else if (strcmp(cmd, "BtnC") == 0) {
+  //   data = data_BtnC;
+  // } else {
+  //   data = data_empty;
+  // }
+  // displayData(data);
+
+  static uint8_t data[ELEMENTS_NUM];
+  unsigned long startTime = micros();  // ★ 送信直前のタイムスタンプ
+  // ★ タイムスタンプのみ送信（ダミーデータ不要）
+  memcpy(&data[0], &startTime, sizeof(unsigned long));
+  // ★ データ送信
+  esp_err_t result = esp_now_send(slave.peer_addr, data, sizeof(data));
+  if (result == ESP_OK) {
+    Serial.println("Ping送信成功");
   } else {
-    data = data_empty;
+    Serial.printf("Ping送信失敗: %d\n", result);
   }
-
-  esp_now_send(slave.peer_addr, data, DATA_SIZE);
-  displayData(data);
 }
 
 uint8_t data[ELEMENTS_NUM];
@@ -171,7 +203,7 @@ void initEspNow() {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   WiFi.disconnect();
-  // esp_wifi_set_ps(WIFI_PS_NONE);  // ★ Wi-Fiスリープ無効化
+  esp_wifi_set_ps(WIFI_PS_NONE);  // ★ Wi-Fiスリープ無効化
 
   if (esp_now_init() == ESP_OK) {
     Serial.println("ESPNow Init Success");
@@ -184,57 +216,21 @@ void initEspNow() {
   for (int i = 0; i < 6; ++i) {
     slave.peer_addr[i] = 0xff;
   }
-  slave.channel = 0;
+  int wifi_ch = 1;
+  esp_wifi_set_channel(wifi_ch, WIFI_SECOND_CHAN_NONE);  // ★ チャネル1に固定
+  slave.channel = wifi_ch;
   slave.encrypt = false;
   esp_err_t addStatus = esp_now_add_peer(&slave);
+
   if (addStatus == ESP_OK) {
     Serial.println("Pair success");
   } else {
     Serial.println("Pair failed");
   }
   esp_now_register_send_cb(OnDataSent);
+  esp_now_register_recv_cb(OnDataRecv);
+
   displayData(data_empty);
-}
-
-/**
- * ESP-NOW送信と遅延計測
- */
-void processAndSendData() {
-  if (dataReady && !testCompleted) {
-    unsigned long startTime = micros();
-
-    // ★ ESP-NOW送信
-    esp_err_t result = esp_now_send(NULL, data, sizeof(data));
-
-    unsigned long endTime = micros();
-    unsigned long delayTime = endTime - startTime;
-
-    // ★ 遅延時間の計測
-    totalDelayTime += delayTime;
-    testCounter++;
-
-    Serial.printf("[%d回目] 処理時間: %lu us\n", testCounter, delayTime);
-
-    // ★ 100回送信後、平均遅延時間を出力
-    if (testCounter >= TEST_COUNT) {
-      unsigned long averageDelay = totalDelayTime / TEST_COUNT;
-
-      Serial.println("--------------------------------------------------");
-      Serial.printf("★ 100回の平均処理時間: %lu us\n", averageDelay);
-      Serial.println("--------------------------------------------------");
-
-      testCompleted = true;
-    }
-
-    // ★ 送信結果の確認
-    if (result == ESP_OK) {
-      Serial.println("ESP-NOW送信成功");
-    } else {
-      Serial.printf("ESP-NOW送信失敗: %d\n", result);
-    }
-
-    dataReady = false;  // ★ フラグリセット
-  }
 }
 
 /*
@@ -248,16 +244,6 @@ L_Vol = 左側の振動強度
 R_Vol = 右側の振動強度
 ex "0,0,0,0,100,100"
 */
-
-/**
- * メイン処理ループ（ループタスク）
- */
-void loopEspNowTask(void* pvParameters) {
-  while (true) {
-    processAndSendData();
-    vTaskDelay(1 / portTICK_PERIOD_MS);  // ★ CPU負荷軽減
-  }
-}
 
 // 固定化 115200 -> 81us, 921600 -> 81us
 // ディスプレイ無効化 -> 71us
@@ -307,27 +293,27 @@ void sendSerialViaESPNOW(void) {
       totalDelayTime += delayTime;
       testCounter++;
 
-      // ★ 各回の遅延時間表示
-      Serial.printf("[%d回目] 処理時間: %lu us\n", testCounter, delayTime);
+      // // ★ 各回の遅延時間表示
+      // Serial.printf("[%d回目] 処理時間: %lu us\n", testCounter, delayTime);
 
-      // ★ 100回到達でディスプレイに平均遅延を表示
-      if (testCounter >= TEST_COUNT && !testCompleted) {
-        unsigned long averageDelay = totalDelayTime / TEST_COUNT;
+      // // ★ 100回到達でディスプレイに平均遅延を表示
+      // if (testCounter >= TEST_COUNT && !testCompleted) {
+      //   unsigned long averageDelay = totalDelayTime / TEST_COUNT;
 
-        Serial.println("--------------------------------------------------");
-        Serial.printf("★ 100回の平均処理時間: %lu us\n", averageDelay);
-        Serial.println("--------------------------------------------------");
+      //   Serial.println("--------------------------------------------------");
+      //   Serial.printf("★ 100回の平均処理時間: %lu us\n", averageDelay);
+      //   Serial.println("--------------------------------------------------");
 
-        // ★ ディスプレイ表示
-        M5.Lcd.fillScreen(BLACK);
-        M5.Lcd.setTextSize(2);
-        M5.Lcd.setCursor(10, 10);
-        M5.Lcd.println("★ テスト結果 ★");
-        M5.Lcd.printf("送信回数: %d回\n", TEST_COUNT);
-        M5.Lcd.printf("平均遅延: %lu us\n", averageDelay);
+      //   // ★ ディスプレイ表示
+      //   M5.Lcd.fillScreen(BLACK);
+      //   M5.Lcd.setTextSize(2);
+      //   M5.Lcd.setCursor(10, 10);
+      //   M5.Lcd.println("★ テスト結果 ★");
+      //   M5.Lcd.printf("送信回数: %d回\n", TEST_COUNT);
+      //   M5.Lcd.printf("平均遅延: %lu us\n", averageDelay);
 
-        testCompleted = true;
-      }
+      //   testCompleted = true;
+      // }
 
       // ★ 送信結果の確認
       if (result == ESP_OK) {
