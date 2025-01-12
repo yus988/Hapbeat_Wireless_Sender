@@ -1,11 +1,16 @@
 #include <WiFi.h>
 #include <esp_now.h>
-
+#include <esp_wifi.h>  // ★ Wi-Fiの省電力設定用
 #ifndef NO_DISPLAY
   #include <M5Unified.h>
 #endif
 
 namespace espnowManager {
+
+#define TEST_COUNT 100             // テスト回数
+unsigned long totalDelayTime = 0;  // 合計遅延時間
+unsigned int testCounter = 0;      // 現在の送信回数
+bool testCompleted = false;        // テスト完了フラグ
 
 esp_now_peer_info_t slave;
 // data = [category, wearer_id, device_pos, data_id, sub_id, L_Vol, R_Vol,
@@ -157,10 +162,16 @@ void SentEspnowTest(const char* cmd) {
   displayData(data);
 }
 
+uint8_t data[ELEMENTS_NUM];
+volatile uint8_t receivedIndex = 0;
+volatile bool dataReady = false;
+esp_now_peer_info_t peer;
+
 void initEspNow() {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   WiFi.disconnect();
+  // esp_wifi_set_ps(WIFI_PS_NONE);  // ★ Wi-Fiスリープ無効化
 
   if (esp_now_init() == ESP_OK) {
     Serial.println("ESPNow Init Success");
@@ -185,6 +196,47 @@ void initEspNow() {
   displayData(data_empty);
 }
 
+/**
+ * ESP-NOW送信と遅延計測
+ */
+void processAndSendData() {
+  if (dataReady && !testCompleted) {
+    unsigned long startTime = micros();
+
+    // ★ ESP-NOW送信
+    esp_err_t result = esp_now_send(NULL, data, sizeof(data));
+
+    unsigned long endTime = micros();
+    unsigned long delayTime = endTime - startTime;
+
+    // ★ 遅延時間の計測
+    totalDelayTime += delayTime;
+    testCounter++;
+
+    Serial.printf("[%d回目] 処理時間: %lu us\n", testCounter, delayTime);
+
+    // ★ 100回送信後、平均遅延時間を出力
+    if (testCounter >= TEST_COUNT) {
+      unsigned long averageDelay = totalDelayTime / TEST_COUNT;
+
+      Serial.println("--------------------------------------------------");
+      Serial.printf("★ 100回の平均処理時間: %lu us\n", averageDelay);
+      Serial.println("--------------------------------------------------");
+
+      testCompleted = true;
+    }
+
+    // ★ 送信結果の確認
+    if (result == ESP_OK) {
+      Serial.println("ESP-NOW送信成功");
+    } else {
+      Serial.printf("ESP-NOW送信失敗: %d\n", result);
+    }
+
+    dataReady = false;  // ★ フラグリセット
+  }
+}
+
 /*
 // [category, wearer, pos, id, subid, L_Vol, R_Vol]
 category = 大枠のチャンネル（ディスプレイに表示されるチャンネル）
@@ -197,36 +249,97 @@ R_Vol = 右側の振動強度
 ex "0,0,0,0,100,100"
 */
 
+/**
+ * メイン処理ループ（ループタスク）
+ */
+void loopEspNowTask(void* pvParameters) {
+  while (true) {
+    processAndSendData();
+    vTaskDelay(1 / portTICK_PERIOD_MS);  // ★ CPU負荷軽減
+  }
+}
+
+// 固定化 115200 -> 81us, 921600 -> 81us
+// ディスプレイ無効化 -> 71us
 void sendSerialViaESPNOW(void) {
-  if (Serial.available() > 0) {
-    // 終了文字まで取得
-    String str = Serial.readStringUntil('\n');
-    beginIndex = 0;
-    for (uint8_t i = 0; i < ELEMENTS_NUM; i++) {
-      if (i != (ELEMENTS_NUM - 1)) {
-        uint8_t endIndex;
-        endIndex = str.indexOf(',', beginIndex);
-        // カンマが見つかった場合
-        if (endIndex != -1) {
-          elements[i] = str.substring(beginIndex, endIndex);
-          beginIndex = endIndex + 1;
-        } else {
-          break;
+  static char buffer[32];  // ★ バッファ（最大32文字を想定）
+  static uint8_t data[ELEMENTS_NUM];
+  static uint8_t bufferIndex = 0;
+
+  while (Serial.available() > 0 && !testCompleted) {
+    unsigned long startReceiveTime = micros();  // ★ 受信開始時間
+
+    char c = Serial.read();
+
+    if (c == '\n' || bufferIndex >= sizeof(buffer) - 1) {
+      buffer[bufferIndex] = '\0';  // ★ 文字列終端
+
+      // ★ パース処理（カンマ区切りの8個の数値を解析）
+      uint8_t dataIndex = 0;
+      uint8_t value = 0;
+
+      for (uint8_t i = 0; i <= bufferIndex; i++) {
+        if (buffer[i] == ',' || buffer[i] == '\0') {
+          data[dataIndex++] = value;
+          value = 0;
+          if (dataIndex >= ELEMENTS_NUM) break;  // ★ 8個読み取りで終了
+        } else if (buffer[i] >= '0' && buffer[i] <= '9') {
+          value = value * 10 + (buffer[i] - '0');  // ★ 数値変換
         }
-      } else {
-        elements[i] = str.substring(beginIndex);
       }
-    }
-    uint8_t data[ELEMENTS_NUM];
-    for (uint8_t i = 0; i < ELEMENTS_NUM; i++) {
-      data[i] = elements[i].toInt();
-    }
-    esp_now_send(slave.peer_addr, data, sizeof(data));
+
+      unsigned long startSendTime = micros();  // ★ ESP-NOW送信開始
+
+      // ★ ESP-NOW送信
+      esp_err_t result = esp_now_send(slave.peer_addr, data, sizeof(data));
+
+      unsigned long endSendTime = micros();  // ★ ESP-NOW送信完了
 
 #if defined(ENABLE_DISPLAY)
-    displayData(data);
-    sendTimes += 1;
+      displayData(data);
+      sendTimes += 1;
 #endif
+
+      bufferIndex = 0;  // ★ バッファクリア
+
+      // ★ 処理時間の計測
+      unsigned long delayTime = endSendTime - startReceiveTime;
+      totalDelayTime += delayTime;
+      testCounter++;
+
+      // ★ 各回の遅延時間表示
+      Serial.printf("[%d回目] 処理時間: %lu us\n", testCounter, delayTime);
+
+      // ★ 100回到達でディスプレイに平均遅延を表示
+      if (testCounter >= TEST_COUNT && !testCompleted) {
+        unsigned long averageDelay = totalDelayTime / TEST_COUNT;
+
+        Serial.println("--------------------------------------------------");
+        Serial.printf("★ 100回の平均処理時間: %lu us\n", averageDelay);
+        Serial.println("--------------------------------------------------");
+
+        // ★ ディスプレイ表示
+        M5.Lcd.fillScreen(BLACK);
+        M5.Lcd.setTextSize(2);
+        M5.Lcd.setCursor(10, 10);
+        M5.Lcd.println("★ テスト結果 ★");
+        M5.Lcd.printf("送信回数: %d回\n", TEST_COUNT);
+        M5.Lcd.printf("平均遅延: %lu us\n", averageDelay);
+
+        testCompleted = true;
+      }
+
+      // ★ 送信結果の確認
+      if (result == ESP_OK) {
+        Serial.println("ESP-NOW送信成功");
+      } else {
+        Serial.printf("ESP-NOW送信失敗: %d\n", result);
+      }
+
+    } else if ((c >= '0' && c <= '9') || c == ',') {
+      // ★ 数字とカンマだけをバッファに追加
+      buffer[bufferIndex++] = c;
+    }
   }
 }
 

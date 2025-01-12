@@ -169,6 +169,7 @@ void mqttStatusCallback(const char* status) {
 
 void setup(void) {
   Serial.begin(115200);
+  // Serial.begin(921600);
 
 #if defined(ENABLE_DISPLAY)
   initM5UImanager();
@@ -194,6 +195,9 @@ void setup(void) {
 
 #ifdef ESPNOW
   espnowManager::initEspNow();
+  // xTaskCreatePinnedToCore(espnowManager::loopEspNowTask, "loopEspNowTask", 4096,
+  //                         NULL, 1, NULL, 1);
+
 #elif MQTT
   MQTT_manager::initMQTTclient(mqttStatusCallback);
   xTaskCreatePinnedToCore(TaskMQTT, "TaskMQTT", 8192, NULL, 23, &thp[0], 1);
@@ -204,6 +208,7 @@ void loop(void) {
 #ifdef ESPNOW
   espnowManager::sendSerialViaESPNOW();
 #endif
+
 #if defined(ENABLE_DISPLAY)
   cmd_stat = "empty";
   cmd_btn = M5ButtonNotify(cmd_stat);
