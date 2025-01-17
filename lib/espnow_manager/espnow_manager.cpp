@@ -1,7 +1,7 @@
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>  // ★ Wi-Fiの省電力設定用
-#ifndef NO_DISPLAY
+#ifdef ENABLE_DISPLAY
   #include <M5Unified.h>
 #endif
 
@@ -39,7 +39,7 @@ void setBtnData(const uint8_t* dataA, const uint8_t* dataB,
 
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////
-
+#ifdef ENABLE_DISPLAY
 void displayData(const uint8_t* data) {
   // 静的に前回のデータを保持
   static uint8_t previousData[ELEMENTS_NUM] = {0};
@@ -131,6 +131,7 @@ void displayData(const uint8_t* data) {
 
   firstRun = false;  // 初回実行フラグを無効化
 }
+#endif
 
 /////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
@@ -229,8 +230,9 @@ void initEspNow() {
   }
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
-
+#ifdef ENABLE_DISPLAY
   displayData(data_empty);
+#endif
 }
 
 /*

@@ -11,8 +11,9 @@ TaskHandle_t thp[2];
 #include "adjustParams.h"
 #include "config.h"
 #include "pinAssign.h"
+#include "globals.h"
 
-#ifndef NO_DISPLAY
+#ifdef ENABLE_DISPLAY
   #include <M5UImanager.h>
 
 const char* cmd_stat;
@@ -61,7 +62,7 @@ void TaskColorSensor(void* args) {
   while (1) {
     ColorSensor::getColorValues(r, g, b);
     String color = determineColor(r, g, b);
-    Serial.printf("R: %d G: %d B: %d, color is: %s\n", r, g, b, color.c_str());
+    DEBUG_PRINTF("R: %d G: %d B: %d, color is: %s\n", r, g, b, color.c_str());
 
     unsigned long currentTime = millis();
     bool shouldSendMessage = false;
@@ -153,6 +154,10 @@ void TaskMQTT(void* args) {
 
 #endif
 
+#ifdef ENABLE_ACCELOMETOR
+  #include "AccelmImpactDetector.h"
+#endif
+
 // mqtt 受信で状態を変えないのであれば不要
 void mqttStatusCallback(const char* status) {
   // Serial.println(status);
@@ -193,6 +198,15 @@ void setup(void) {
 
 #endif
 
+#ifdef ENABLE_ACCELOMETOR
+  if (!AccelmImpactDetector::initAccelm()) {
+    Serial.println("Failed to initialize accelerometer!");
+    while (1) {
+      delay(100);
+    }
+  }
+#endif
+
 #ifdef ESPNOW
   espnowManager::initEspNow();
   // xTaskCreatePinnedToCore(espnowManager::loopEspNowTask, "loopEspNowTask",
@@ -208,6 +222,12 @@ void setup(void) {
 void loop(void) {
 #ifdef ESPNOW
   espnowManager::sendSerialViaESPNOW();
+#endif
+
+#ifdef ENABLE_ACCELOMETOR
+  Serial.println("Loop Debug");
+  // AccelmImpactDetector::showAccelGraph();
+  delay(1000);
 #endif
 
 #if defined(ENABLE_DISPLAY)
