@@ -1,5 +1,6 @@
 #include <Arduino.h>
-
+#include <M5Unified.h>
+#include "globals.h"
 TaskHandle_t thp[2];
 
 #ifdef ESPNOW
@@ -11,7 +12,6 @@ TaskHandle_t thp[2];
 #include "adjustParams.h"
 #include "config.h"
 #include "pinAssign.h"
-#include "globals.h"
 
 #ifdef ENABLE_DISPLAY
   #include <M5UImanager.h>
@@ -160,10 +160,10 @@ void TaskMQTT(void* args) {
 
 // mqtt 受信で状態を変えないのであれば不要
 void mqttStatusCallback(const char* status) {
-  // Serial.println(status);
+  // USBSerial.println(status);
   // if (strcmp(status, "Successfully connected to Hapbeat") == 0) {
   //   _leds[0] = CREATE_CRGB(COLOR_CONNECTED);
-  //   Serial.println("turn LED to GREEN");
+  //   USBSerial.println("turn LED to GREEN");
   // } else if (strstr(status, "failed") != NULL) {
   //   _leds[0] = CREATE_CRGB(COLOR_UNCONNECTED);
   // }
@@ -174,8 +174,7 @@ void mqttStatusCallback(const char* status) {
 
 void setup(void) {
   Serial.begin(115200);
-  // Serial.begin(921600);
-
+  // USBSerial.begin(921600);
 #if defined(ENABLE_DISPLAY)
   initM5UImanager();
   espnowManager::setBtnData(data_BtnA, data_BtnB, data_BtnC, 8);
@@ -200,10 +199,7 @@ void setup(void) {
 
 #ifdef ENABLE_ACCELOMETOR
   if (!AccelmImpactDetector::initAccelm()) {
-    Serial.println("Failed to initialize accelerometer!");
-    while (1) {
-      delay(100);
-    }
+    DEBUG_PRINTLN("Failed to initialize accelerometer!");
   }
 #endif
 
@@ -225,9 +221,8 @@ void loop(void) {
 #endif
 
 #ifdef ENABLE_ACCELOMETOR
-  Serial.println("Loop Debug");
-  // AccelmImpactDetector::showAccelGraph();
-  delay(1000);
+  AccelmImpactDetector::showAccelGraph();
+  delay(100);
 #endif
 
 #if defined(ENABLE_DISPLAY)
@@ -235,7 +230,7 @@ void loop(void) {
   cmd_btn = M5ButtonNotify(cmd_stat);
   if (cmd_btn != "empty") {
     espnowManager::SentEspnowTest(cmd_btn);
-    Serial.println(cmd_btn);
+    USBSerial.println(cmd_btn);
   }
 #endif
 }
