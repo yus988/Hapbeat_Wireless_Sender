@@ -169,30 +169,31 @@ void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
 }
 
 void SentEspnowTest(const char* cmd) {
-  // const uint8_t* data;
+  const uint8_t* data;
 
-  // if (strcmp(cmd, "BtnA") == 0) {
-  //   data = data_BtnA;
-  // } else if (strcmp(cmd, "BtnB") == 0) {
-  //   data = data_BtnB;
-  // } else if (strcmp(cmd, "BtnC") == 0) {
-  //   data = data_BtnC;
-  // } else {
-  //   data = data_empty;
-  // }
-  // displayData(data);
-
-  static uint8_t data[ELEMENTS_NUM];
-  unsigned long startTime = micros();  // ★ 送信直前のタイムスタンプ
-  // ★ タイムスタンプのみ送信（ダミーデータ不要）
-  memcpy(&data[0], &startTime, sizeof(unsigned long));
-  // ★ データ送信
-  esp_err_t result = esp_now_send(slave.peer_addr, data, sizeof(data));
-  if (result == ESP_OK) {
-    Serial.println("Ping送信成功");
+  if (strcmp(cmd, "BtnA") == 0) {
+    data = data_BtnA;
+  } else if (strcmp(cmd, "BtnB") == 0) {
+    data = data_BtnB;
+  } else if (strcmp(cmd, "BtnC") == 0) {
+    data = data_BtnC;
   } else {
-    Serial.printf("Ping送信失敗: %d\n", result);
+    data = data_empty;
   }
+  displayData(data);
+  esp_err_t result = esp_now_send(slave.peer_addr, data, sizeof(data));
+
+  // static uint8_t data[ELEMENTS_NUM];
+  // unsigned long startTime = micros();  // ★ 送信直前のタイムスタンプ
+  // // ★ タイムスタンプのみ送信（ダミーデータ不要）
+  // memcpy(&data[0], &startTime, sizeof(unsigned long));
+  // // ★ データ送信
+  // esp_err_t result = esp_now_send(slave.peer_addr, data, sizeof(data));
+  // if (result == ESP_OK) {
+  //   Serial.println("Ping送信成功");
+  // } else {
+  //   Serial.printf("Ping送信失敗: %d\n", result);
+  // }
 }
 
 uint8_t data[ELEMENTS_NUM];
