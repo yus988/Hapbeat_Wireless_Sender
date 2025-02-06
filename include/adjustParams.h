@@ -12,12 +12,12 @@ extern const uint8_t data_BtnC[];
 
 // カラーコンフィグ
 struct ColorThreshold {
-    uint8_t rMin;
-    uint8_t rMax;
-    uint8_t gMin;
-    uint8_t gMax;
-    uint8_t bMin;
-    uint8_t bMax;
+  uint8_t rMin;
+  uint8_t rMax;
+  uint8_t gMin;
+  uint8_t gMax;
+  uint8_t bMin;
+  uint8_t bMax;
 };
 
 extern const ColorThreshold RED_THD;
@@ -26,8 +26,8 @@ extern const ColorThreshold YELLOW_THD;
 
 // VibrationParams 構造体の定義
 struct VibrationParams {
-    uint8_t id;
-    uint8_t vol;
+  uint8_t id;
+  uint8_t vol;
 };
 
 extern const VibrationParams RED_PARAMS;
@@ -36,13 +36,14 @@ extern const VibrationParams YELLOW_PARAMS;
 
 // RGB値を保持する構造体の定義
 struct RGB {
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
 };
 
 extern const RGB COLOR_CONNECTED;
 extern const RGB COLOR_UNCONNECTED;
+  #define CREATE_CRGB(color) CRGB((color).r, (color).g, (color).b)
 
 // H/W 設定
 extern const uint8_t LED_BRIGHTNESS;
@@ -60,6 +61,6 @@ extern const uint8_t DEVICE_POS;
 extern const uint8_t SUB_ID;
 extern const uint8_t PLAY_CMD;
 
-#endif // ENABLE_COLOR_SENSOR
+#endif  // ENABLE_COLOR_SENSOR
 
-#endif // ADJ_PARAMS_H
+#endif  // ADJ_PARAMS_H

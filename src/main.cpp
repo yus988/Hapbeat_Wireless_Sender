@@ -62,7 +62,7 @@ void TaskColorSensor(void* args) {
   while (1) {
     ColorSensor::getColorValues(r, g, b);
     String color = determineColor(r, g, b);
-    DEBUG_PRINTF("R: %d G: %d B: %d, color is: %s\n", r, g, b, color.c_str());
+     Serial.printf("R: %d G: %d B: %d, color is: %s\n", r, g, b, color.c_str());
 
     unsigned long currentTime = millis();
     bool shouldSendMessage = false;
@@ -199,7 +199,7 @@ void setup(void) {
 
 #ifdef ENABLE_ACCELOMETOR
   if (!AccelmImpactDetector::initAccelm()) {
-    DEBUG_PRINTLN("Failed to initialize accelerometer!");
+     Serial.println("Failed to initialize accelerometer!");
   }
 #endif
 
@@ -222,7 +222,7 @@ void loop(void) {
 
 #ifdef ENABLE_ACCELOMETOR
   AccelmImpactDetector::showAccelGraph();
-  delay(100);
+  delay(1);
 #endif
 
 #if defined(ENABLE_DISPLAY)
@@ -230,7 +230,7 @@ void loop(void) {
   cmd_btn = M5ButtonNotify(cmd_stat);
   if (cmd_btn != "empty") {
     espnowManager::SentEspnowTest(cmd_btn);
-    USBSerial.println(cmd_btn);
+    Serial.println(cmd_btn);
   }
 #endif
 }

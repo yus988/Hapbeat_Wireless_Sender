@@ -86,9 +86,11 @@ void initMQTTclient(void (*statusCb)(const char*)) {
   statusCallback = statusCb;
 
   // 固定IPアドレスを設定
+  #if defined(LOCAL)
   if (!WiFi.config(local_IP, gateway, subnet)) {
       Serial.printf("Failed to configure static IP");
   }
+  #endif
 
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {

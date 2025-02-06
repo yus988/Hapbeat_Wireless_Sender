@@ -165,10 +165,12 @@ void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
   unsigned long oneWayDelay = roundTripTime / 2;
 
   // ★ シリアル出力で遅延を表示
-  Serial.printf("★ Ping-Pong片道遅延: %lu us\n", oneWayDelay);
+  // Serial.printf("★ Ping-Pong片道遅延: %lu us\n", oneWayDelay);
 }
 
 void SentEspnowTest(const char* cmd) {
+#if defined(ENABLE_DISPLAY)
+
   const uint8_t* data;
 
   if (strcmp(cmd, "BtnA") == 0) {
@@ -182,6 +184,7 @@ void SentEspnowTest(const char* cmd) {
   }
   displayData(data);
   esp_err_t result = esp_now_send(slave.peer_addr, data, sizeof(data));
+#endif
 
   // static uint8_t data[ELEMENTS_NUM];
   // unsigned long startTime = micros();  // ★ 送信直前のタイムスタンプ

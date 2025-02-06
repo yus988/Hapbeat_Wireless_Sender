@@ -156,9 +156,30 @@ void showAccelGraph() {
     float ax = data.accel.x;
     float ay = data.accel.y;
     float az = data.accel.z;
+    az -= 1.0f;
 
-    // シリアルに出力
-    Serial.printf("[Accel] X=%.3f, Y=%.3f, Z=%.3f (G)\n", ax, ay, az);
+    // z軸のみ
+    // Serial.printf("[Accel] X=%.3f, Y=%.3f, Z=%.3f (G)\n", ax, ay, az);
+
+    Serial.printf("%.3f\r\n", az);
+
+    // // シリアルに出力
+    // Serial.printf("[Accel] X=%.3f, Y=%.3f, Z=%.3f (G)\n", ax, ay, az);
+
+    // ヘッダ行は最初の1回だけ表示する
+    // static bool headerPrinted = false;
+    // if (!headerPrinted) {
+    //   Serial.println("x,y,z");  // ←ヘッダ
+    //   headerPrinted = true;
+    // }
+
+    // Serial.printf("%.3f,%.3f,%.3f\n", ax, ay, az);
+    // Serial.printf("[Accel] X=%.3f, Y=%.3f, Z=%.3f (G)\n", ax, ay, az);
+
+    // ★★★ ここをVSCodeシリアルプロッター向けにスペース区切りで出力 ★★★
+    // 例: "0.12 0.34 0.98"
+    // (各軸を1行にまとめて出力することで3軸を同時にグラフ化可能)
+    // Serial.printf("{\"ax\":%.2f,\"ay\":%.2f,\"az\":%.2f}\n", ax, ay, az);
 
     // ▼ 必要に応じてジャイロ・地磁気も出力可能
     //    float gx = data.gyro.x;
