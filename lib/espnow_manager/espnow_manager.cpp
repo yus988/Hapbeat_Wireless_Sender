@@ -152,6 +152,42 @@ void OnDataSent(const uint8_t* mac_addr, esp_now_send_status_t status) {
 
 // テスト用
 void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
+#ifdef REPEATER
+  // 中継器モード：3つ目の要素が50の場合のみ中継
+  if (len == ELEMENTS_NUM) {
+    // 3つ目の要素（position）が50かチェック
+    if (incomingData[2] == 99) {
+      static uint8_t relayData[ELEMENTS_NUM];
+
+      // 受信データをコピー
+      memcpy(relayData, incomingData, ELEMENTS_NUM);
+
+      // 3つ目の要素（position）を99に変更
+      relayData[2] = 50;
+
+      // 即座に送信（低遅延重視）
+      esp_now_send(slave.peer_addr, relayData, ELEMENTS_NUM);
+
+      // 送信後に画面表示（遅延を避けるため送信完了後）
+  #ifdef ENABLE_DISPLAY
+      displayData(relayData);
+      sendTimes += 1;
+  #endif
+
+  #ifdef ENABLE_DEBUG
+      Serial.printf(
+          "Relay: [%d,%d,%d,%d,%d,%d,%d,%d] -> position changed 99->50\n",
+          relayData[0], relayData[1], relayData[2], relayData[3], relayData[4],
+          relayData[5], relayData[6], relayData[7]);
+  #endif
+    } else {
+  #ifdef ENABLE_DEBUG
+      Serial.printf("Skip relay: position=%d (not 50)\n", incomingData[2]);
+  #endif
+    }
+  }
+#else
+  // 既存のテスト用コード
   // Serial.printf("★pingpongrecieved\n ");
 
   unsigned long recvTime = micros();  // ★ 受信時刻
@@ -166,6 +202,7 @@ void OnDataRecv(const uint8_t* mac, const uint8_t* incomingData, int len) {
 
   // ★ シリアル出力で遅延を表示
   // Serial.printf("★ Ping-Pong片道遅延: %lu us\n", oneWayDelay);
+#endif
 }
 
 void SentEspnowTest(const char* cmd) {
@@ -234,10 +271,32 @@ void initEspNow() {
   }
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
+
+#ifdef REPEATER
+  Serial.println("ESP-NOW Repeater Mode Enabled");
+  Serial.println("Waiting for data to relay...");
+#endif
+
 #ifdef ENABLE_DISPLAY
   displayData(data_empty);
 #endif
 }
+
+#ifdef REPEATER
+// 中継器専用の初期化関数
+void initRepeaterMode() {
+  // 中継器として最適化された設定
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.disconnect();
+  esp_wifi_set_ps(WIFI_PS_NONE);  // Wi-Fiスリープ完全無効化
+
+  // 最大送信パワーに設定（受信感度向上）
+  esp_wifi_set_max_tx_power(84);  // 最大84 (21dBm)
+
+  Serial.println("Repeater mode optimized for low latency");
+}
+#endif
 
 /*
 // [category, wearer, pos, id, subid, L_Vol, R_Vol]
@@ -299,34 +358,36 @@ void sendSerialViaESPNOW(void) {
       totalDelayTime += delayTime;
       testCounter++;
 
-      // // ★ 各回の遅延時間表示
-      // Serial.printf("[%d回目] 処理時間: %lu us\n", testCounter, delayTime);
+// // ★ 各回の遅延時間表示
+// Serial.printf("[%d回目] 処理時間: %lu us\n", testCounter, delayTime);
 
-      // // ★ 100回到達でディスプレイに平均遅延を表示
-      // if (testCounter >= TEST_COUNT && !testCompleted) {
-      //   unsigned long averageDelay = totalDelayTime / TEST_COUNT;
+// // ★ 100回到達でディスプレイに平均遅延を表示
+// if (testCounter >= TEST_COUNT && !testCompleted) {
+//   unsigned long averageDelay = totalDelayTime / TEST_COUNT;
 
-      //   Serial.println("--------------------------------------------------");
-      //   Serial.printf("★ 100回の平均処理時間: %lu us\n", averageDelay);
-      //   Serial.println("--------------------------------------------------");
+//   Serial.println("--------------------------------------------------");
+//   Serial.printf("★ 100回の平均処理時間: %lu us\n", averageDelay);
+//   Serial.println("--------------------------------------------------");
 
-      //   // ★ ディスプレイ表示
-      //   M5.Lcd.fillScreen(BLACK);
-      //   M5.Lcd.setTextSize(2);
-      //   M5.Lcd.setCursor(10, 10);
-      //   M5.Lcd.println("★ テスト結果 ★");
-      //   M5.Lcd.printf("送信回数: %d回\n", TEST_COUNT);
-      //   M5.Lcd.printf("平均遅延: %lu us\n", averageDelay);
+//   // ★ ディスプレイ表示
+//   M5.Lcd.fillScreen(BLACK);
+//   M5.Lcd.setTextSize(2);
+//   M5.Lcd.setCursor(10, 10);
+//   M5.Lcd.println("★ テスト結果 ★");
+//   M5.Lcd.printf("送信回数: %d回\n", TEST_COUNT);
+//   M5.Lcd.printf("平均遅延: %lu us\n", averageDelay);
 
-      //   testCompleted = true;
-      // }
+//   testCompleted = true;
+// }
 
-      // ★ 送信結果の確認
+// ★ 送信結果の確認
+#ifdef ENABLE_DEBUG
       if (result == ESP_OK) {
         Serial.println("ESP-NOW送信成功");
       } else {
         Serial.printf("ESP-NOW送信失敗: %d\n", result);
       }
+#endif
 
     } else if ((c >= '0' && c <= '9') || c == ',') {
       // ★ 数字とカンマだけをバッファに追加

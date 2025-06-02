@@ -8,6 +8,10 @@ void sendSerialViaESPNOW(void);
 void SentEspnowTest(const char* cmd);
 void setBtnData(const uint8_t* dataA, const uint8_t* dataB,
                 const uint8_t* dataC, size_t size);
+
+#ifdef REPEATER
+void initRepeaterMode();
+#endif
 }  // namespace espnowManager
 
 #endif

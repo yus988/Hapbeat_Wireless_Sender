@@ -62,7 +62,7 @@ void TaskColorSensor(void* args) {
   while (1) {
     ColorSensor::getColorValues(r, g, b);
     String color = determineColor(r, g, b);
-     Serial.printf("R: %d G: %d B: %d, color is: %s\n", r, g, b, color.c_str());
+    Serial.printf("R: %d G: %d B: %d, color is: %s\n", r, g, b, color.c_str());
 
     unsigned long currentTime = millis();
     bool shouldSendMessage = false;
@@ -175,6 +175,29 @@ void mqttStatusCallback(const char* status) {
 void setup(void) {
   Serial.begin(115200);
   // USBSerial.begin(921600);
+
+#ifdef REPEATER
+  // 中継器専用セットアップ（最小限の初期化で低遅延重視）
+  Serial.println("=== ESP-NOW Repeater Mode ===");
+
+  // M5Unified基本初期化（ディスプレイに必要）
+  auto cfg = M5.config();
+  cfg.external_spk = false;
+  M5.begin(cfg);
+
+  #if defined(ENABLE_DISPLAY)
+  // ディスプレイ初期化
+  initM5UImanager();
+  espnowManager::setBtnData(data_BtnA, data_BtnB, data_BtnC, 8);
+  Serial.println("Display initialized for repeater");
+  #endif
+
+  espnowManager::initRepeaterMode();
+  espnowManager::initEspNow();
+  Serial.println("Repeater ready - low latency mode");
+  return;  // 他の初期化をスキップ
+#endif
+
 #if defined(ENABLE_DISPLAY)
   initM5UImanager();
   espnowManager::setBtnData(data_BtnA, data_BtnB, data_BtnC, 8);
@@ -199,7 +222,7 @@ void setup(void) {
 
 #ifdef ENABLE_ACCELOMETOR
   if (!AccelmImpactDetector::initAccelm()) {
-     Serial.println("Failed to initialize accelerometer!");
+    Serial.println("Failed to initialize accelerometer!");
   }
 #endif
 
@@ -216,6 +239,12 @@ void setup(void) {
 }
 
 void loop(void) {
+#ifdef REPEATER
+  // 中継器モードでは最小限の処理のみ
+  delay(1);  // CPUリソースを他のタスクに譲る最小限の遅延
+  return;
+#endif
+
 #ifdef ESPNOW
   espnowManager::sendSerialViaESPNOW();
 #endif
