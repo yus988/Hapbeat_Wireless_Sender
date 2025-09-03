@@ -22,7 +22,7 @@ int sendTimes = 0;
 unsigned int beginIndex;  // 要素の開始位置
 static String elements[ELEMENTS_NUM];
 
-const uint8_t data_empty[] = {0, 0, 0, 0, 0, 000, 000, 0};
+const uint8_t data_empty[] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t data_BtnA[ELEMENTS_NUM] = {0};
 uint8_t data_BtnB[ELEMENTS_NUM] = {0};
 uint8_t data_BtnC[ELEMENTS_NUM] = {0};
@@ -219,8 +219,15 @@ void SentEspnowTest(const char* cmd) {
   } else {
     data = data_empty;
   }
+  // 送信するデータ内容をシリアルに出力
+  Serial.print("Sent data: ");
+  for (int i = 0; i < ELEMENTS_NUM; ++i) {
+    Serial.print(data[i]);
+    if (i < ELEMENTS_NUM - 1) Serial.print(",");
+  }
+  Serial.println();
   displayData(data);
-  esp_err_t result = esp_now_send(slave.peer_addr, data, sizeof(data));
+  esp_err_t result = esp_now_send(slave.peer_addr, data, ELEMENTS_NUM);
 #endif
 
   // static uint8_t data[ELEMENTS_NUM];
