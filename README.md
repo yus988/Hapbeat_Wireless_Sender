@@ -45,12 +45,10 @@ Hapbeat Wireless Sender Firmware は、M5Stack シリーズを無線送信機と
 ### 通信方式
 
 - ESPNOW: 低遅延（数ミリ秒）・ブロードキャスト通信。送信機と受信機を直接接続（安定するのは 30m 程度）
-- MQTT: Wi-Fi 接続および MQTT プロトコルを利用する方式。Wi-Fi の範囲内で遠距離通信可能だが、別途 MQTT ブローカーの用意が必要（インターネット経由）。
-  - MQTT_local: ローカルの MQTT ブローカーを使用する場合。
 
 ### アプリケーション
 
-- Color: カラーセンサーの値によって振動通知を送信。現状 MQTT のみ対応。
+- Color: カラーセンサーの値によって振動通知を送信。
 
 ## パラメータ調整項目
 
@@ -72,8 +70,6 @@ Hapbeat Wireless Sender Firmware は、M5Stack シリーズを無線送信機と
 | ----------------- | ---------- | -------------- | ----------------------------------------------------------------------------------- |
 | M5Unified         | 0.1.14     | MIT ライセンス | [M5Unified_0.1.14_LICENSE.md](./licenses/M5Unified_0.1.14_LICENSE.md)               |
 | Adafruit TCS34725 | 1.4.4      | BSD ライセンス | [Adafruit_TCS34725_1.4.4_LICENSE.md](./licenses/Adafruit_TCS34725_1.4.4_LICENSE.md) |
-| MQTT (256dpi)     | 2.5.2      | MIT ライセンス | [MQTT_2.5.2_LICENSE.md](./licenses/MQTT_2.5.2_LICENSE.md)                           |
-| PubSubClient      | 2.8        | MIT ライセンス | [PubSubClient_2.8_LICENSE.md](./licenses/PubSubClient_2.8_LICENSE.md)               |
 | ArduinoJson       | 7.1.0      | MIT ライセンス | [ArduinoJson_7.1.0_LICENSE.md](./licenses/ArduinoJson_7.1.0_LICENSE.md)             |
 | FastLED           | 3.7.0      | MIT ライセンス | [FastLED_3.7.0_LICENSE.md](./licenses/FastLED_3.7.0_LICENSE.md)                     |
 

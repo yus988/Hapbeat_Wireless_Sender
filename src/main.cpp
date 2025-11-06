@@ -3,11 +3,7 @@
 #include "globals.h"
 TaskHandle_t thp[2];
 
-#ifdef ESPNOW
-  #include <espnow_manager.h>
-#elif MQTT
-  #include <MQTT_manager.h>
-#endif
+#include <espnow_manager.h>
 
 #include "adjustParams.h"
 #include "config.h"
@@ -93,8 +89,7 @@ void TaskColorSensor(void* args) {
     if (color == "None" && !sentMessageForNone &&
         (currentTime - lastNoneTime >= RETAIN_REFRESH_INTERVAL)) {
       // Noneの色が1分間続いたらメッセージを送信
-      char message[] = "98,98,98,4,0,0,0,0";
-      MQTT_manager::sendMessageToHapbeat(message);
+      // MQTT削除により無効化
       sentMessageForNone = true;  // メッセージを送信したフラグを立てる
     }
 
@@ -115,7 +110,7 @@ void TaskColorSensor(void* args) {
       char message[100];
       snprintf(message, sizeof(message), "%d,%d,%d,%d,%d,%d,%d,%d", CATEGORY,
                WEARER_ID, DEVICE_POS, id, SUB_ID, lVol, rVol, PLAY_CMD);
-      MQTT_manager::sendMessageToHapbeat(message);
+      // MQTT削除により無効化
     }
 
   #if defined(INTERNET)
@@ -128,7 +123,7 @@ void TaskColorSensor(void* args) {
       doc["b"] = b;
       String jsonMessage;
       serializeJson(doc, jsonMessage);
-      MQTT_manager::sendMessageToWebApp(jsonMessage.c_str());
+      // MQTT削除により無効化
 
       count = 0;  // カウントをリセット
     }
@@ -139,36 +134,11 @@ void TaskColorSensor(void* args) {
   }
 }
 
-void TaskMQTT(void* args) {
-  while (1) {
-    MQTT_manager::loopMQTTclient();
-    if (MQTT_manager::mqttConnected) {
-      _leds[0] = CREATE_CRGB(COLOR_CONNECTED);
-    } else {
-      _leds[0] = CREATE_CRGB(COLOR_UNCONNECTED);
-    }
-    FastLED.show();
-    delay(100);
-  }
-}
-
 #endif
 
 #ifdef ENABLE_ACCELOMETOR
   #include "AccelmImpactDetector.h"
 #endif
-
-// mqtt 受信で状態を変えないのであれば不要
-void mqttStatusCallback(const char* status) {
-  // USBSerial.println(status);
-  // if (strcmp(status, "Successfully connected to Hapbeat") == 0) {
-  //   _leds[0] = CREATE_CRGB(COLOR_CONNECTED);
-  //   USBSerial.println("turn LED to GREEN");
-  // } else if (strstr(status, "failed") != NULL) {
-  //   _leds[0] = CREATE_CRGB(COLOR_UNCONNECTED);
-  // }
-  // FastLED.show();
-}
 
 //////////////////// task //////////////////////
 
@@ -226,16 +196,10 @@ void setup(void) {
   }
 #endif
 
-#ifdef ESPNOW
   espnowManager::initEspNow();
   // xTaskCreatePinnedToCore(espnowManager::loopEspNowTask, "loopEspNowTask",
   // 4096,
   //                         NULL, 1, NULL, 1);
-
-#elif MQTT
-  MQTT_manager::initMQTTclient(mqttStatusCallback);
-  xTaskCreatePinnedToCore(TaskMQTT, "TaskMQTT", 8192, NULL, 23, &thp[0], 1);
-#endif
 }
 
 void loop(void) {
@@ -245,9 +209,7 @@ void loop(void) {
   return;
 #endif
 
-#ifdef ESPNOW
   espnowManager::sendSerialViaESPNOW();
-#endif
 
 #ifdef ENABLE_ACCELOMETOR
   AccelmImpactDetector::showAccelGraph();
