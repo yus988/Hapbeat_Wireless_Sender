@@ -209,6 +209,10 @@ void loop(void) {
   return;
 #endif
 
+#ifdef ENABLE_TEST_DATA
+  espnowManager::sendTestDataTick();
+#endif
+
   espnowManager::sendSerialViaESPNOW();
 
 #ifdef ENABLE_ACCELOMETOR

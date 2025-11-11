@@ -2,7 +2,7 @@
 
 // ボタン押下時に送信するデータ
 // category,wearerID,devicePos,dataID,subid,c_leftPower,c_rightPower,playType
-const uint8_t data_BtnA[] = {0, 99, 99, 0, 0, 100, 100, 0};
+const uint8_t data_BtnA[] = {0, 99, 99, 1, 0, 100, 100, 0};
 const uint8_t data_BtnB[] = {0, 99, 99, 5, 0, 50, 50, 1};
 const uint8_t data_BtnC[] = {0, 99, 99, 99, 0, 0, 0, 2};
 

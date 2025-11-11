@@ -1,11 +1,39 @@
+#include <Arduino.h>
 #include <WiFi.h>
 #include <esp_now.h>
-#include <esp_wifi.h>  // ★ Wi-Fiの省電力設定用
+#include <esp_wifi.h>        // ★ Wi-Fiの省電力設定用
+#include <esp_idf_version.h>  // ★ バージョン判定
 #ifdef ENABLE_DISPLAY
   #include <M5Unified.h>
 #endif
 
 namespace espnowManager {
+
+namespace {
+
+void configureRadioForRange() {
+  // 最大全出力 (21 dBm)
+  esp_wifi_set_max_tx_power(84);
+
+  // 低レート優先で受信感度を確保
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+  esp_wifi_config_espnow_rate(WIFI_IF_STA, WIFI_PHY_RATE_1M_L);
+  esp_wifi_config_espnow_rate(WIFI_IF_AP, WIFI_PHY_RATE_1M_L);
+#endif
+
+  // 11b/g/n + ロングレンジを有効化
+#if defined(WIFI_PROTOCOL_LR)
+  const uint8_t protocolMask = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G |
+                               WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR;
+#else
+  const uint8_t protocolMask = WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G |
+                               WIFI_PROTOCOL_11N;
+#endif
+  esp_wifi_set_protocol(WIFI_IF_STA, protocolMask);
+  esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
+}
+
+}  // namespace
 
 // テスト用
 #define TEST_COUNT 100             // テスト回数
@@ -243,6 +271,33 @@ void SentEspnowTest(const char* cmd) {
   // }
 }
 
+#ifdef ENABLE_TEST_DATA
+void sendTestDataTick() {
+  static unsigned long lastSend = 0;
+  unsigned long now = millis();
+
+  if (now - lastSend < 1000) {
+    return;
+  }
+  lastSend = now;
+
+#ifdef ENABLE_DISPLAY
+  displayData(data_BtnA);
+  sendTimes += 1;
+#endif
+
+  esp_err_t result = esp_now_send(slave.peer_addr, data_BtnA, ELEMENTS_NUM);
+
+#ifdef ENABLE_DEBUG
+  if (result == ESP_OK) {
+    Serial.println("ESP-NOW送信成功 (TEST_DATA)");
+  } else {
+    Serial.printf("ESP-NOW送信失敗 (TEST_DATA): %d\n", result);
+  }
+#endif
+}
+#endif
+
 uint8_t data[ELEMENTS_NUM];
 volatile uint8_t receivedIndex = 0;
 volatile bool dataReady = false;
@@ -253,6 +308,8 @@ void initEspNow() {
   WiFi.setSleep(false);
   WiFi.disconnect();
   esp_wifi_set_ps(WIFI_PS_NONE);  // ★ Wi-Fiスリープ無効化
+
+  configureRadioForRange();
 
   if (esp_now_init() == ESP_OK) {
     Serial.println("ESPNow Init Success");
@@ -298,8 +355,7 @@ void initRepeaterMode() {
   WiFi.disconnect();
   esp_wifi_set_ps(WIFI_PS_NONE);  // Wi-Fiスリープ完全無効化
 
-  // 最大送信パワーに設定（受信感度向上）
-  esp_wifi_set_max_tx_power(84);  // 最大84 (21dBm)
+  configureRadioForRange();
 
   Serial.println("Repeater mode optimized for low latency");
 }
