@@ -140,6 +140,10 @@ void TaskColorSensor(void* args) {
   #include "AccelmImpactDetector.h"
 #endif
 
+#ifdef ENABLE_ACCEL_TRIGGER
+  #include <AccelTrigger.h>
+#endif
+
 //////////////////// task //////////////////////
 
 void setup(void) {
@@ -168,7 +172,18 @@ void setup(void) {
   return;  // 他の初期化をスキップ
 #endif
 
-#if defined(ENABLE_DISPLAY)
+#ifdef ENABLE_ACCEL_TRIGGER
+  // M5StickC Plus2用の初期化（ENABLE_DISPLAYがあっても専用初期化を使用）
+  Serial.println("=== AccelTrigger Mode (M5StickC Plus2) ===");
+  auto cfg = M5.config();
+  cfg.internal_imu = true;
+  M5.begin(cfg);
+  
+  AccelTrigger::init();
+  espnowManager::setBtnData(data_AccelLow, data_AccelMid, data_AccelHigh, 8);
+  
+#elif defined(ENABLE_DISPLAY)
+  // 通常のディスプレイ初期化（M5Stack Basic等）
   initM5UImanager();
   espnowManager::setBtnData(data_BtnA, data_BtnB, data_BtnC, 8);
 #endif
@@ -220,7 +235,18 @@ void loop(void) {
   delay(1);
 #endif
 
-#if defined(ENABLE_DISPLAY)
+#ifdef ENABLE_ACCEL_TRIGGER
+  M5.update();  // ボタン状態更新
+  AccelTrigger::loop();
+  
+  // ボタンAでキャリブレーション
+  if (M5.BtnA.wasPressed()) {
+    Serial.println("AccelTrigger: Starting calibration...");
+    M5.Imu.setCalibration(64, 64, 64);
+  }
+
+#elif defined(ENABLE_DISPLAY)
+  // 通常のディスプレイモード（M5Stack Basic等）
   cmd_stat = "empty";
   cmd_btn = M5ButtonNotify(cmd_stat);
   if (cmd_btn != "empty") {

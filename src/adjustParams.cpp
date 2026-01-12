@@ -46,5 +46,36 @@ const uint8_t LED_BRIGHTNESS = 5;
 
 #endif // ENABLE_COLOR_SENSOR
 
+#ifdef ENABLE_ACCEL_TRIGGER
 
+// 加速度トリガーの送信データ定義（閾値レベル別・ベースデータ）
+// category, wearerID, devicePos, dataID, subid, c_leftPower, c_rightPower, playType
+// ※subidとpowerは実行時に動的に設定される
+const uint8_t data_AccelLow[]  = {0, 99, 99, 1, 0, 0, 0, 0};   // 低閾値用ベース
+const uint8_t data_AccelMid[]  = {0, 99, 99, 1, 0, 0, 0, 0};   // 中閾値用ベース
+const uint8_t data_AccelHigh[] = {0, 99, 99, 1, 0, 0, 0, 0};   // 高閾値用ベース
+
+// 閾値レベルと送信データのマッピング
+// { thresholdMin, thresholdMax, baseData, powerMin, powerMax }
+const AccelTriggerData ACCEL_TRIGGER_DATA[] = {
+  { 0.5f, 1.5f, data_AccelLow,  20,  60 },  // 0.5G以上1.5G未満 → Low  (power: 20-60)
+  { 1.5f, 3.0f, data_AccelMid,  40,  80 },  // 1.5G以上3.0G未満 → Mid  (power: 40-80)
+  { 3.0f, 0.0f, data_AccelHigh, 60, 100 }   // 3.0G以上 → High (power: 60-100)
+};
+const uint8_t ACCEL_TRIGGER_DATA_COUNT = sizeof(ACCEL_TRIGGER_DATA) / sizeof(ACCEL_TRIGGER_DATA[0]);
+
+// 加速度トリガーの設定
+const AccelTriggerConfig ACCEL_CONFIG = {
+  .axis = AccelAxis::AXIS_Z,          // 監視する軸 (AXIS_X, AXIS_Y, AXIS_Z, AXIS_XYZ)
+  .threshold = 0.5f,                  // 最小閾値 (G単位) - これ以上でトリガー
+  .deadTimeMs = 200,                  // 連続トリガー防止 (ms)
+  .displayEnabled = true,             // ディスプレイ表示ON
+  .displayRangeG = 5.0f,              // 波形表示範囲 0-5G
+  .sampleIntervalMs = 5,              // サンプリング間隔 5ms (200Hz)
+  .acSampleCount = 8,                 // AC計算用サンプル数（少ないほど高速応答）
+  .subIdMax = 6,                      // subidの最大値（0〜6のランダム）
+  .interpType = InterpolationType::LINEAR  // 補間タイプ (LINEAR, EXP, LOG)
+};
+
+#endif // ENABLE_ACCEL_TRIGGER
 

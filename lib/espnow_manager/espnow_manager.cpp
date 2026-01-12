@@ -65,6 +65,21 @@ void setBtnData(const uint8_t* dataA, const uint8_t* dataB,
   }
 }
 
+// 汎用データ送信関数（加速度トリガー等で使用）
+void sendData(const uint8_t* data, size_t size) {
+  if (size > ELEMENTS_NUM) size = ELEMENTS_NUM;
+  esp_err_t result = esp_now_send(slave.peer_addr, data, size);
+  sendTimes++;
+  
+#ifdef ENABLE_DEBUG
+  if (result == ESP_OK) {
+    Serial.println("ESP-NOW送信成功");
+  } else {
+    Serial.printf("ESP-NOW送信失敗: %d\n", result);
+  }
+#endif
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////
 #ifdef ENABLE_DISPLAY
