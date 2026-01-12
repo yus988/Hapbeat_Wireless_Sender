@@ -83,7 +83,6 @@ enum class InterpolationType : uint8_t {
 // 加速度トリガーの設定構造体
 struct AccelTriggerConfig {
   AccelAxis axis;           // 監視する軸
-  float threshold;          // 閾値 (G単位)
   uint16_t deadTimeMs;      // 連続トリガー防止のデッドタイム (ms)
   bool displayEnabled;      // ディスプレイ表示のON/OFF
   float displayRangeG;      // 波形表示の範囲 (±G)
@@ -95,8 +94,7 @@ struct AccelTriggerConfig {
 
 // 閾値ごとの送信データ定義用構造体
 struct AccelTriggerData {
-  float thresholdMin;      // この閾値以上
-  float thresholdMax;      // この閾値未満 (0で上限なし)
+  float threshold;         // この閾値以上で適用（次のレベルの閾値未満まで）
   const uint8_t* data;     // 送信するベースデータ
   uint8_t powerMin;        // このレベルの最小パワー
   uint8_t powerMax;        // このレベルの最大パワー

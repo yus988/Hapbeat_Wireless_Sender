@@ -91,13 +91,14 @@ static float interpolate(float value, float minVal, float maxVal, InterpolationT
 }
 
 // 閾値に応じた送信データとレベル情報を取得し、パワーを計算
+// 逆順でチェックし、最も高い閾値を超えるレベルを選択
 static const uint8_t* getTriggerDataWithPower(float accelValue, const char** levelName, 
                                                uint8_t* outPower, uint8_t* levelIndex) {
-  for (uint8_t i = 0; i < ACCEL_TRIGGER_DATA_COUNT; i++) {
-    float minThd = ACCEL_TRIGGER_DATA[i].thresholdMin;
-    float maxThd = ACCEL_TRIGGER_DATA[i].thresholdMax;
+  // 逆順でループ（最も高い閾値からチェック）
+  for (int8_t i = ACCEL_TRIGGER_DATA_COUNT - 1; i >= 0; i--) {
+    float threshold = ACCEL_TRIGGER_DATA[i].threshold;
     
-    if (accelValue >= minThd && (maxThd == 0.0f || accelValue < maxThd)) {
+    if (accelValue >= threshold) {
       // レベル名を設定
       if (i == 0) *levelName = "Low";
       else if (i == 1) *levelName = "Mid";
@@ -106,9 +107,11 @@ static const uint8_t* getTriggerDataWithPower(float accelValue, const char** lev
       *levelIndex = i;
       
       // パワーを補間計算
-      // maxThdが0（上限なし）の場合は、minThd + 2.0Gを仮の上限とする
-      float effectiveMax = (maxThd == 0.0f) ? minThd + 2.0f : maxThd;
-      float t = interpolate(accelValue, minThd, effectiveMax, ACCEL_CONFIG.interpType);
+      // 次のレベルの閾値を上限とする（最後のレベルは閾値+2.0Gを仮の上限）
+      float nextThreshold = (i < ACCEL_TRIGGER_DATA_COUNT - 1) 
+                            ? ACCEL_TRIGGER_DATA[i + 1].threshold 
+                            : threshold + 2.0f;
+      float t = interpolate(accelValue, threshold, nextThreshold, ACCEL_CONFIG.interpType);
       
       uint8_t powerMin = ACCEL_TRIGGER_DATA[i].powerMin;
       uint8_t powerMax = ACCEL_TRIGGER_DATA[i].powerMax;
@@ -163,7 +166,7 @@ static void drawWaveform() {
   
   // 閾値線を描画（3つすべて）
   for (uint8_t i = 0; i < ACCEL_TRIGGER_DATA_COUNT; i++) {
-    float threshold = ACCEL_TRIGGER_DATA[i].thresholdMin;
+    float threshold = ACCEL_TRIGGER_DATA[i].threshold;
     int16_t thresholdY = graphTop + graphHeight - (int16_t)(threshold / rangeG * graphHeight);
     
     // 範囲内のみ描画
@@ -261,8 +264,8 @@ void init() {
   canvasInitialized = true;
   Serial.printf("AccelTrigger: Canvas created (%dx%d)\n", w, h);
   
-  Serial.printf("AccelTrigger: Axis=%d, Threshold=%.2fG, DeadTime=%dms, AcSamples=%d\n",
-                (int)ACCEL_CONFIG.axis, ACCEL_CONFIG.threshold, 
+  Serial.printf("AccelTrigger: Axis=%d, MinThreshold=%.2fG, DeadTime=%dms, AcSamples=%d\n",
+                (int)ACCEL_CONFIG.axis, ACCEL_TRIGGER_DATA[0].threshold, 
                 ACCEL_CONFIG.deadTimeMs, ACCEL_CONFIG.acSampleCount);
 }
 
@@ -293,8 +296,8 @@ void loop() {
   waveBuffer[waveIndex] = acValue;
   waveIndex = (waveIndex + 1) % WAVE_BUFFER_SIZE;
   
-  // 閾値判定（デッドタイム考慮）
-  if (acValue >= ACCEL_CONFIG.threshold) {
+  // 閾値判定（デッドタイム考慮）- 最小閾値はACCEL_TRIGGER_DATA[0]から取得
+  if (acValue >= ACCEL_TRIGGER_DATA[0].threshold) {
     if (now - lastTriggerTime >= ACCEL_CONFIG.deadTimeMs) {
       lastTriggerTime = now;
       triggerCount++;
