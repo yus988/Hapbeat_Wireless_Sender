@@ -1,9 +1,15 @@
 #include <Arduino.h>
-#include <M5Unified.h>
+// XIAO ESP32C3 等、M5Unified を使わないenvでもビルドできるようにする
+#if __has_include(<M5Unified.h>)
+  #include <M5Unified.h>
+#endif
 #include "globals.h"
 TaskHandle_t thp[2];
 
 #include <espnow_manager.h>
+#ifdef ENABLE_AUDIO_STREAM
+  #include <audioStreamSender.h>
+#endif
 
 #include "adjustParams.h"
 #include "config.h"
@@ -147,7 +153,12 @@ void TaskColorSensor(void* args) {
 //////////////////// task //////////////////////
 
 void setup(void) {
+#if defined(ENABLE_AUDIO_STREAM) && defined(STREAM_SOURCE_SERIAL)
+  Serial.setRxBufferSize(4096);
+  Serial.begin(921600);
+#else
   Serial.begin(115200);
+#endif
   // USBSerial.begin(921600);
 
 #ifdef REPEATER
@@ -212,15 +223,26 @@ void setup(void) {
 #endif
 
   espnowManager::initEspNow();
-  // xTaskCreatePinnedToCore(espnowManager::loopEspNowTask, "loopEspNowTask",
-  // 4096,
-  //                         NULL, 1, NULL, 1);
+
+#ifdef ENABLE_AUDIO_STREAM
+  audioStreamSender::init();
+  Serial.println("=== Audio Stream Mode ===");
+#endif
 }
 
 void loop(void) {
 #ifdef REPEATER
-  // 中継器モードでは最小限の処理のみ
-  delay(1);  // CPUリソースを他のタスクに譲る最小限の遅延
+  delay(1);
+  return;
+#endif
+
+#ifdef ENABLE_AUDIO_STREAM
+  #ifdef STREAM_SOURCE_SERIAL
+    audioStreamSender::processSerialStream();
+  #endif
+  #ifdef ENABLE_DISPLAY
+    audioStreamSender::drawScopeIfEnabled();
+  #endif
   return;
 #endif
 
